@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Environment
+.env
+credentials/
+
+# Data (raw CSVs can be large; generated files not needed in git)
+data/raw/
+data/cleaned/
+
+# Reports (auto-generated each run)
+reports/*.log
+reports/*.csv
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Power BI (binary — keep spec docs but not .pbix unless small)
+*.pbix

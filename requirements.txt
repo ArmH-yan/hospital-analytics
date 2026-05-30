@@ -1,0 +1,35 @@
+# Hospital Operations Analytics — Python Dependencies
+# Install: pip install -r requirements.txt
+
+# Core data
+pandas==2.2.2
+numpy==1.26.4
+
+# Database
+sqlalchemy==2.0.30
+psycopg2-binary==2.9.9
+
+# Google Sheets
+gspread==6.1.2
+google-auth==2.29.0
+google-auth-oauthlib==1.2.0
+
+# Machine Learning
+scikit-learn==1.4.2
+xgboost==2.0.3            # optional but recommended
+
+# Scheduling
+schedule==1.2.2
+
+# Jupyter (notebooks)
+jupyterlab==4.2.1
+ipykernel==6.29.4
+
+# Visualization (notebooks)
+matplotlib==3.9.0
+seaborn==0.13.2
+plotly==5.22.0
+
+# Utilities
+python-dotenv==1.0.1
+tqdm==4.66.4
