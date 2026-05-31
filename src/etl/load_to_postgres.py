@@ -47,31 +47,31 @@ def get_engine():
 
 
 def run_sql_file(engine, filepath: str):
-    with open(filepath) as f:
+    with open(filepath, encoding="utf-8") as f:
         sql = f.read()
     with engine.connect() as conn:
         conn.execute(text(sql))
         conn.commit()
-    logger.info(f"  ✓ Executed {filepath}")
+    logger.info(f"  [OK] Executed {filepath}")
 
 
 def load_table(engine, df: pd.DataFrame, table: str, if_exists: str = "append"):
     before = len(df)
     df = df.drop_duplicates()          # final safety dedup before load
-    df = df.where(pd.notnull(df), None)  # convert NaN → None for SQL NULLs
+    df = df.where(pd.notnull(df), None)  # convert NaN -> None for SQL NULLs
     df.to_sql(
         table, engine,
         if_exists=if_exists, index=False,
         method="multi", chunksize=1000
     )
-    logger.info(f"  ✓ Loaded {len(df):,} rows into '{table}' (dropped {before - len(df)} dupes)")
+    logger.info(f"  [OK] Loaded {len(df):,} rows into '{table}' (dropped {before - len(df)} dupes)")
 
 
 def truncate_table(engine, table: str):
     with engine.connect() as conn:
         conn.execute(text(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE"))
         conn.commit()
-    logger.info(f"  ✓ Truncated '{table}'")
+    logger.info(f"  [OK] Truncated '{table}'")
 
 
 def refresh_materialized_views(engine):
@@ -80,7 +80,7 @@ def refresh_materialized_views(engine):
         for v in views:
             conn.execute(text(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {v}"))
             conn.commit()
-            logger.info(f"  ✓ Refreshed {v}")
+            logger.info(f"  [OK] Refreshed {v}")
 
 
 def validate_row_counts(engine):
@@ -107,13 +107,15 @@ def run_etl():
 
     # ── Step 2: Load reference tables (doctors, resources — rarely change) ────
     logger.info("\n[2/5] Loading reference data...")
-    for table, file in [
-        ("doctors",   "doctors.csv"),
-        ("resources", "resources.csv"),
-    ]:
-        truncate_table(engine, table)
-        df = pd.read_csv(f"{CLEAN_DIR}/{file}")
-        load_table(engine, df, table)
+    truncate_table(engine, "doctors")
+    load_table(engine, pd.read_csv(f"{CLEAN_DIR}/doctors.csv"), "doctors")
+
+    truncate_table(engine, "resources")
+    resources_df = pd.read_csv(f"{CLEAN_DIR}/resources.csv")
+    # total_beds is a GENERATED ALWAYS column in PostgreSQL — drop it before insert,
+    # the DB will compute it automatically from occupied_beds + available_beds
+    resources_df = resources_df.drop(columns=["total_beds"], errors="ignore")
+    load_table(engine, resources_df, "resources")
 
     # ── Step 3: Load fact tables ──────────────────────────────────────────────
     logger.info("\n[3/5] Loading transactional data...")
@@ -154,7 +156,7 @@ def run_etl():
     validate_row_counts(engine)
 
     elapsed = round(time.time() - start, 2)
-    logger.info(f"\n✅ ETL COMPLETE in {elapsed}s")
+    logger.info(f"\n[DONE] ETL COMPLETE in {elapsed}s")
     logger.info("=" * 60)
 
 

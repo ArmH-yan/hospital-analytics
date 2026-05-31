@@ -1,11 +1,11 @@
--- ═══════════════════════════════════════════════════════════════════════════
+-- ===========================================================================
 -- Hospital Operations Analytics — PostgreSQL Schema
--- ═══════════════════════════════════════════════════════════════════════════
+-- ===========================================================================
 
--- ── 0. Extensions ────────────────────────────────────────────────────────────
+-- -- 0. Extensions ------------------------------------------------------------
 CREATE EXTENSION IF NOT EXISTS pg_trgm;   -- fuzzy text search on names
 
--- ── 1. Core Tables ───────────────────────────────────────────────────────────
+-- -- 1. Core Tables -----------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS patients (
     patient_id        VARCHAR(12)  PRIMARY KEY,
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS quality_report (
 COMMENT ON TABLE quality_report IS 'Automated data quality audit log.';
 
 
--- ── 2. Indexes ────────────────────────────────────────────────────────────────
+-- -- 2. Indexes ----------------------------------------------------------------
 
 -- Appointments — most queried table
 CREATE INDEX IF NOT EXISTS idx_apt_patient_id    ON appointments(patient_id);
@@ -121,7 +121,7 @@ CREATE INDEX IF NOT EXISTS idx_res_snapshot_date ON resources(snapshot_date);
 CREATE INDEX IF NOT EXISTS idx_doc_name_trgm     ON doctors USING GIN (doctor_name gin_trgm_ops);
 
 
--- ── 3. Views ──────────────────────────────────────────────────────────────────
+-- -- 3. Views ------------------------------------------------------------------
 
 CREATE OR REPLACE VIEW v_appointment_detail AS
 SELECT
@@ -213,7 +213,7 @@ GROUP BY
     a.appointment_date, p.registration_date, a.appointment_status;
 
 
--- ── 4. Materialized Views ─────────────────────────────────────────────────────
+-- -- 4. Materialized Views -----------------------------------------------------
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS mv_monthly_revenue AS
 SELECT
@@ -271,7 +271,7 @@ COMMENT ON MATERIALIZED VIEW mv_doctor_performance
     IS 'Pre-aggregated doctor performance KPIs. Refresh nightly.';
 
 
--- ── 5. Refresh helper ─────────────────────────────────────────────────────────
+-- -- 5. Refresh helper ---------------------------------------------------------
 -- Run this nightly after ETL load:
 -- REFRESH MATERIALIZED VIEW CONCURRENTLY mv_monthly_revenue;
 -- REFRESH MATERIALIZED VIEW CONCURRENTLY mv_doctor_performance;

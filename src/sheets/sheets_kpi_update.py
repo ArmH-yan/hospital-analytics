@@ -4,7 +4,7 @@ Pulls daily KPIs from PostgreSQL and writes them to a Google Sheet.
 
 Setup:
   1. Create a GCP project, enable Sheets API + Drive API.
-  2. Create a Service Account, download JSON key → save as credentials/gsheets_key.json
+  2. Create a Service Account, download JSON key -> save as credentials/gsheets_key.json
   3. Share your Google Sheet with the service account email.
   4. Set SPREADSHEET_ID below.
 
@@ -141,7 +141,7 @@ def write_sheet(spreadsheet, sheet_name: str, df: pd.DataFrame, add_timestamp: b
         "backgroundColor": {"red": 0.18, "green": 0.38, "blue": 0.62}
     })
 
-    logger.info(f"  ✓ Sheet '{sheet_name}' updated with {len(df)} rows")
+    logger.info(f"  [OK] Sheet '{sheet_name}' updated with {len(df)} rows")
     return ws
 
 
@@ -173,10 +173,19 @@ def write_kpi_overview(spreadsheet, exec_kpi: pd.DataFrame):
     ws.update("A1", data)
     ws.format("A1", {"textFormat": {"bold": True, "fontSize": 14}})
     ws.format("A4:C4", {"textFormat": {"bold": True}})
-    logger.info("  ✓ Executive KPI sheet updated")
+    logger.info("  [OK] Executive KPI sheet updated")
 
 
 def run_sheets_update():
+    # Skip gracefully if credentials file is not set up yet
+    if not os.path.exists(CREDENTIALS_FILE):
+        logger.warning("[SKIP] Google Sheets: credentials/gsheets_key.json not found.")
+        logger.warning("[SKIP] Follow the Google Sheets setup guide to enable this step.")
+        return
+    if SPREADSHEET_ID in ("YOUR_SPREADSHEET_ID_HERE", "", None):
+        logger.warning("[SKIP] Google Sheets: SPREADSHEET_ID not set in .env file.")
+        return
+
     logger.info("=" * 60)
     logger.info("  GOOGLE SHEETS KPI UPDATE")
     logger.info(f"  {datetime.utcnow().isoformat()}")
@@ -195,12 +204,12 @@ def run_sheets_update():
 
     logger.info("Writing to Google Sheets...")
     write_kpi_overview(ss, exec_kpi)
-    write_sheet(ss, "📈 Monthly KPIs",           monthly)
-    write_sheet(ss, "🏥 Department Performance", departments)
-    write_sheet(ss, "👨‍⚕️ Top Doctors",          doctors)
-    write_sheet(ss, "🛏️ Resource Snapshot",      resources)
+    write_sheet(ss, "Monthly KPIs",           monthly)
+    write_sheet(ss, "Department Performance", departments)
+    write_sheet(ss, "Top Doctors",          doctors)
+    write_sheet(ss, "Resource Snapshot",      resources)
 
-    logger.info("\n✅ Google Sheets update complete")
+    logger.info("\n[DONE] Google Sheets update complete")
 
 
 if __name__ == "__main__":

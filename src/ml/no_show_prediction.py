@@ -50,7 +50,7 @@ def load_features(engine) -> pd.DataFrame:
     logger.info("Loading feature data from v_no_show_risk_features...")
     query = "SELECT * FROM v_no_show_risk_features WHERE age IS NOT NULL"
     df = pd.read_sql(query, engine)
-    logger.info(f"  → {len(df):,} rows loaded")
+    logger.info(f"  -> {len(df):,} rows loaded")
     return df
 
 
@@ -121,11 +121,21 @@ def get_feature_importance(model, model_name: str) -> pd.DataFrame:
 
 def run_ml_pipeline():
     engine = get_engine_safe()
-    if engine is None:
-        logger.warning("No DB connection — using synthetic data for demo.")
+    df = None
+
+    if engine is not None:
+        try:
+            df = load_features(engine)
+            if len(df) == 0:
+                logger.warning("View returned 0 rows - ETL may not have run yet.")
+                df = None
+        except Exception as e:
+            logger.warning(f"Could not load from DB: {e}. Using synthetic data.")
+            df = None
+
+    if df is None:
+        logger.info("Using synthetic data for demo (run ETL first for real results).")
         df = generate_synthetic_features()
-    else:
-        df = load_features(engine)
 
     df, le = engineer_features(df)
 
@@ -171,27 +181,27 @@ def run_ml_pipeline():
     os.makedirs("reports", exist_ok=True)
     metrics_df = pd.DataFrame(all_metrics)
     metrics_df.to_csv("reports/ml_metrics.csv", index=False)
-    logger.info("\n✅ ML metrics saved to reports/ml_metrics.csv")
+    logger.info("\n[DONE] ML metrics saved to reports/ml_metrics.csv")
 
     # ── Business interpretation ───────────────────────────────────────────────
     best = metrics_df.sort_values("roc_auc", ascending=False).iloc[0]
     print(f"""
-╔══════════════════════════════════════════════════════════╗
-║  BUSINESS INTERPRETATION                                 ║
-╠══════════════════════════════════════════════════════════╣
-║  Best model : {best['model']:<43} ║
-║  ROC-AUC    : {best['roc_auc']:<43} ║
-║  Recall     : {best['recall']:<43} ║
-╠══════════════════════════════════════════════════════════╣
-║  • A recall of {best['recall']:.0%} means the model correctly flags  ║
-║    ~{best['recall']:.0%} of patients who would no-show.              ║
-║  • These patients can receive automated SMS reminders,   ║
-║    phone calls, or be double-booked to reduce lost       ║
-║    appointment slots.                                    ║
-║  • Based on the no-show volume in this dataset, this     ║
-║    model could recover an estimated 30–40% of revenue    ║
-║    lost to no-shows if recall > 0.65.                    ║
-╚══════════════════════════════════════════════════════════╝
++==========================================================╗
+|  BUSINESS INTERPRETATION                                 |
++==========================================================|
+|  Best model : {best['model']:<43} |
+|  ROC-AUC    : {best['roc_auc']:<43} |
+|  Recall     : {best['recall']:<43} |
++==========================================================|
+|  • A recall of {best['recall']:.0%} means the model correctly flags  |
+|    ~{best['recall']:.0%} of patients who would no-show.              |
+|  • These patients can receive automated SMS reminders,   |
+|    phone calls, or be double-booked to reduce lost       |
+|    appointment slots.                                    |
+|  • Based on the no-show volume in this dataset, this     |
+|    model could recover an estimated 30–40% of revenue    |
+|    lost to no-shows if recall > 0.65.                    |
++==========================================================╝
 """)
 
     return metrics_df
