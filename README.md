@@ -135,7 +135,7 @@ hospital_analytics/
 
 ### 1. Clone and install
 ```bash
-git clone https://github.com/YOUR_USERNAME/hospital-analytics.git
+git clone https://github.com/ArmH-yan/hospital-analytics.git
 cd hospital-analytics
 pip install -r requirements.txt
 ```
@@ -237,18 +237,13 @@ Sample output from `quality_report.csv`:
 - [ ] Docker Compose to run the full stack locally
 - [ ] CI/CD pipeline for automated tests
 
----
-
-## 📄 License
-
-MIT — free to use and adapt for portfolio purposes.
 
 ---
 
 ## 🙋 About
 
-Built as a portfolio project targeting Junior/Mid BI Analyst and Data Analyst roles,
-specifically demonstrating skills in SQL, PostgreSQL, Python, BI tooling, and automation.
+Built as a portfolio project targeting Intern/Junior BI Analyst and Data Analyst roles,
+specifically demonstrating skills in Docker, SQL, PostgreSQL, Python, BI tooling, and automation.
 
 Skills demonstrated: SQL · PostgreSQL · Python · pandas · SQLAlchemy · Power BI ·
 Metabase · Google Sheets API · scikit-learn · XGBoost · ETL · Data Quality · Scheduling
