@@ -13,6 +13,13 @@ import time
 from pathlib import Path
 from datetime import datetime
 
+# Auto-load .env file if present
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # python-dotenv not installed; use system env vars or defaults
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",

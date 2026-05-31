@@ -19,11 +19,18 @@ from datetime import datetime, date
 import logging
 import os
 
+# Auto-load .env file if present
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
 # ─── Config ───────────────────────────────────────────────────────────────────
-SPREADSHEET_ID   = os.getenv("SPREADSHEET_ID", "YOUR_SPREADSHEET_ID_HERE")
+SPREADSHEET_ID   = os.getenv("SPREADSHEET_ID", "1oubgOekr7THUXH4Ds0CCx4q8W1avIFTitjyZYvzK_A8")
 CREDENTIALS_FILE = "credentials/gsheets_key.json"
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
