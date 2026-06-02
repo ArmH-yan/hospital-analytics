@@ -170,12 +170,6 @@ This runs in sequence:
 4. **Google Sheets** → KPI dashboard (requires API credentials)
 5. **ML model** → `reports/ml_metrics.csv`
 
-### 5. Start Metabase
-```bash
-docker run -d -p 3000:3000 metabase/metabase
-# Open http://localhost:3000
-```
-
 ---
 
 ## 📊 Key SQL Concepts Demonstrated
@@ -245,5 +239,4 @@ Sample output from `quality_report.csv`:
 Built as a portfolio project targeting Intern/Junior BI Analyst and Data Analyst roles,
 specifically demonstrating skills in Docker, SQL, PostgreSQL, Python, BI tooling, and automation.
 
-Skills demonstrated: SQL · PostgreSQL · Python · pandas · SQLAlchemy · Power BI ·
-Metabase · Google Sheets API · scikit-learn · XGBoost · ETL · Data Quality · Scheduling
+Skills demonstrated: SQL · PostgreSQL · Python · pandas · SQLAlchemy · Power BI · Google Sheets API · scikit-learn · XGBoost · ETL · Data Quality · Scheduling
