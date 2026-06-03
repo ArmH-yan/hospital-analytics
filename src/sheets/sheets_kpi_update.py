@@ -15,7 +15,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 from sqlalchemy import create_engine, text
 import pandas as pd
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 import logging
 import os
 
@@ -30,7 +30,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger(__name__)
 
 # ─── Config ───────────────────────────────────────────────────────────────────
-SPREADSHEET_ID   = os.getenv("SPREADSHEET_ID", "1oubgOekr7THUXH4Ds0CCx4q8W1avIFTitjyZYvzK_A8")
+SPREADSHEET_ID   = os.getenv("SPREADSHEET_ID", "")
+if not SPREADSHEET_ID:
+    logger.warning("SPREADSHEET_ID env var not set. Google Sheets update will be skipped.")
 CREDENTIALS_FILE = "credentials/gsheets_key.json"
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -129,14 +131,16 @@ def write_sheet(spreadsheet, sheet_name: str, df: pd.DataFrame, add_timestamp: b
     rows    = [headers] + df.fillna("").astype(str).values.tolist()
 
     if add_timestamp:
-        rows.insert(0, [f"🔄 Last updated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}"])
+        rows.insert(0, [f"🔄 Last updated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}"])
         rows.insert(1, [])  # blank spacer
 
     ws.update("A1", rows)
 
-    # Bold first/header row
+    # Bold the header row
+    from openpyxl.utils import get_column_letter
     header_row = 3 if add_timestamp else 1
-    ws.format(f"A{header_row}:{chr(64 + len(headers))}{header_row}", {
+    last_col = get_column_letter(len(headers))
+    ws.format(f"A{header_row}:{last_col}{header_row}", {
         "textFormat": {"bold": True},
         "backgroundColor": {"red": 0.18, "green": 0.38, "blue": 0.62}
     })
@@ -154,7 +158,7 @@ def write_kpi_overview(spreadsheet, exec_kpi: pd.DataFrame):
         ws = spreadsheet.add_worksheet(title="📊 Executive KPIs", rows=30, cols=5)
 
     kpi = exec_kpi.iloc[0]
-    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     data = [
         ["Hospital Operations Analytics — Executive KPI Dashboard"],
@@ -188,7 +192,7 @@ def run_sheets_update():
 
     logger.info("=" * 60)
     logger.info("  GOOGLE SHEETS KPI UPDATE")
-    logger.info(f"  {datetime.utcnow().isoformat()}")
+    logger.info(f"  {datetime.now(timezone.utc).isoformat()}")
     logger.info("=" * 60)
 
     engine = get_engine()
