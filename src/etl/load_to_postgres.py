@@ -11,7 +11,7 @@ import logging
 import os
 import time
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Auto-load .env file if present
 try:
@@ -96,7 +96,7 @@ def run_etl():
     start = time.time()
     logger.info("=" * 60)
     logger.info("  HOSPITAL ANALYTICS ETL PIPELINE STARTED")
-    logger.info(f"  Run time: {datetime.utcnow().isoformat()}")
+    logger.info(f"  Run time: {datetime.now(timezone.utc).isoformat()}")
     logger.info("=" * 60)
 
     engine = get_engine()

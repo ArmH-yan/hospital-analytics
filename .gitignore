@@ -10,7 +10,16 @@ env/
 
 # Environment
 .env
-credentials/
+.env.*
+# Block all real credential JSONs but keep *.example templates
+credentials/gsheets_key.json
+credentials/*.json
+!credentials/*.json.example
+!credentials/*.example
+# Fallback: ignore the rest of the credentials dir but not the templates above
+credentials/*
+!credentials/gsheets_key.json.example
+!credentials/*.example
 
 # Data (raw CSVs can be large; generated files not needed in git)
 data/raw/

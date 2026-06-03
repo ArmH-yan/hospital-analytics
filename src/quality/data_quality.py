@@ -4,7 +4,7 @@ Hospital Analytics - Data Quality Validation Module
 
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import logging
 import sys
@@ -16,7 +16,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-VALID_GENDERS    = {"Male", "Female", "Other"}
+VALID_GENDERS    = {"Male", "Female"}
 VALID_STATUSES   = {"Completed", "No-show", "Cancelled", "Rescheduled"}
 VALID_TREATMENTS = {
     "Surgery", "Medication", "Physiotherapy", "Chemotherapy",
@@ -35,7 +35,7 @@ def _record(table, check, col, severity, n_issues, total, detail=""):
         "total_rows":   total,
         "pct_affected": pct,
         "detail":       detail,
-        "checked_at":   datetime.utcnow().isoformat()
+        "checked_at":   datetime.now(timezone.utc).isoformat()
     }
 
 
@@ -47,7 +47,7 @@ def check_patients(df):
     results.append(_record("patients", "Null value",           "age",             "MEDIUM", int(df["age"].isna().sum()), n))
     results.append(_record("patients", "Out-of-range value",   "age",             "HIGH",   int(((df["age"].dropna() <= 0) | (df["age"].dropna() > 120)).sum()), n, "age must be 1-120"))
     results.append(_record("patients", "Invalid category",     "gender",          "MEDIUM", int((~df["gender"].isin(VALID_GENDERS) & df["gender"].notna()).sum()), n))
-    results.append(_record("patients", "Null value",           "gender",          "LOW",    int(df["gender"].isna().sum()), n))
+    results.append(_record("patients", "Null value",           "gender",          "HIGH",   int(df["gender"].isna().sum()), n))
     results.append(_record("patients", "Future date",          "registration_date","HIGH",  int((pd.to_datetime(df["registration_date"]) > datetime.now()).sum()), n))
     return results
 
@@ -75,28 +75,47 @@ def check_treatments(df):
 
 
 def clean_patients(df):
+    before = len(df)
     df = df.drop_duplicates(subset=["patient_id"])
     df = df[df["patient_id"].notna()]
     df["age"] = pd.to_numeric(df["age"], errors="coerce")
-    df = df[(df["age"].isna()) | ((df["age"] >= 1) & (df["age"] <= 120))]
-    df["gender"] = df["gender"].where(df["gender"].isin(VALID_GENDERS), other="Other")
+
+    # Impute out-of-range ages with the median valid age
+    valid_age_mask = (df["age"] >= 1) & (df["age"] <= 120)
+    n_invalid_age  = int((~valid_age_mask & df["age"].notna()).sum())
+    median_age     = df.loc[valid_age_mask, "age"].median()
+    df.loc[~valid_age_mask, "age"] = median_age
+
+    # Drop rows with missing or invalid gender
+    n_bad_gender = int((~df["gender"].isin(VALID_GENDERS) | df["gender"].isna()).sum())
+    df = df[df["gender"].isin(VALID_GENDERS)]
+
+    after = len(df)
+    logger.info(f"  clean_patients: {before:,} -> {after:,} rows "
+                f"(imputed {n_invalid_age} ages with median {median_age}, dropped {n_bad_gender} bad-gender rows)")
     return df.reset_index(drop=True)
 
 
 def clean_appointments(df):
+    before = len(df)
     df = df.drop_duplicates(subset=["appointment_id"])
     df = df[df["patient_id"].notna()]
     df = df[df["appointment_status"].isin(VALID_STATUSES)]
     df = df[df["appointment_cost"].isna() | (df["appointment_cost"] >= 0)]
     df = df[df["waiting_time_minutes"].isna() | (df["waiting_time_minutes"] >= 0)]
+    after = len(df)
+    logger.info(f"  clean_appointments: {before:,} -> {after:,} rows (dropped {before - after:,})")
     return df.reset_index(drop=True)
 
 
 def clean_treatments(df):
+    before = len(df)
     df = df.drop_duplicates(subset=["treatment_id"])
     df = df[pd.to_datetime(df["treatment_date"]) <= datetime.now()]
     df = df[df["treatment_cost"].isna() | (df["treatment_cost"] >= 0)]
     df["diagnosis"] = df["diagnosis"].fillna("Unspecified")
+    after = len(df)
+    logger.info(f"  clean_treatments: {before:,} -> {after:,} rows (dropped {before - after:,})")
     return df.reset_index(drop=True)
 
 

@@ -16,6 +16,7 @@ psycopg2-binary
 gspread
 google-auth
 google-auth-oauthlib
+openpyxl          # for column-letter utility in sheets_kpi_update.py
 
 # Machine Learning
 scikit-learn
@@ -32,7 +33,3 @@ ipykernel
 matplotlib
 seaborn
 plotly
-
-# Utilities
-python-dotenv
-tqdm

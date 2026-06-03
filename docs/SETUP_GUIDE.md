@@ -18,6 +18,8 @@ This guide fixes everything one by one.
 ## PART D — Google Sheets (Step 4) — optional, skip for now
 ## PART E — Run ML model (Step 5)
 ## PART F — Run the full pipeline successfully
+## PART G — Connect DBeaver (optional)
+## PART H — Google Sheets setup (when ready)
 
 ---
 
@@ -152,12 +154,12 @@ python src/etl/load_to_postgres.py
 # Expected output (takes 10-30 seconds):
 #   [INFO] [1/5] Applying database schema...
 #   [INFO] [2/5] Loading reference data...
-#   [INFO]   ✓ Loaded 80 rows into 'doctors'
+#   [INFO]   ✓ Loaded 80 rows into 'doctors'  (now with gender column)
 #   [INFO]   ✓ Loaded 10 rows into 'resources'
 #   [INFO] [3/5] Loading transactional data...
-#   [INFO]   ✓ Loaded 9,xxx rows into 'patients'
-#   [INFO]   ✓ Loaded 54,xxx rows into 'appointments'
-#   [INFO]   ✓ Loaded 17,xxx rows into 'treatments'
+#   [INFO]   ✓ Loaded ~9,930 rows into 'patients'  (bad-gender rows dropped, out-of-range ages imputed)
+#   [INFO]   ✓ Loaded ~54,300 rows into 'appointments'
+#   [INFO]   ✓ Loaded ~17,800 rows into 'treatments'
 #   [INFO] [4/5] Refreshing materialized views...
 #   [INFO] [5/5] Validating row counts...
 #   [INFO] ✅ ETL COMPLETE in X.Xs
@@ -173,7 +175,7 @@ SELECT
 # Expected:
 #  patients | doctors | appointments | treatments
 # ----------+---------+--------------+------------
-#    9xxx   |   80    |    54xxx     |   17xxx
+#   ~9,930  |   80    |   ~54,300    |   ~17,800
 
 ---
 
@@ -193,17 +195,19 @@ SELECT
 # ════════════════════════════════════════════════
 
 python src/ml/no_show_prediction.py
-# Expected (runs in ~30-60 seconds):
+# Expected (runs in ~30-60 seconds with the DB view, ~5s on synthetic fallback):
 #   [INFO] Loading feature data from v_no_show_risk_features...
-#   [INFO]   → 35,xxx rows loaded
+#   [INFO]   -> 35,xxx rows loaded
 #   [INFO]   Class distribution: {0: 29xxx, 1: 6xxx}
 #   [INFO] Training Random Forest...
-#   ──────────────────────────────────────────────────
+#   --------------------------------------------------
 #     Random Forest
-#   ──────────────────────────────────────────────────
-#     Accuracy : 0.78xx
-#     ROC-AUC  : 0.72xx
-#   [INFO] ✅ ML metrics saved to reports/ml_metrics.csv
+#   --------------------------------------------------
+#     Accuracy : 0.7x
+#     ROC-AUC  : 0.7x
+#   [INFO] [DONE] ML metrics saved to reports/ml_metrics.csv
+# (The exact numbers depend on your data; the README shows the most recent
+#  measured values from the synthetic-fallback path.)
 
 # If it says "No DB connection — using synthetic data for demo":
 # → ETL wasn't run yet. Run Part C first, then retry this.
@@ -242,52 +246,7 @@ python automation/scheduler.py --once
 ---
 
 # ════════════════════════════════════════════════
-# PART G — Start Metabase
-# ════════════════════════════════════════════════
-
-docker run -d `
-  --name hospital-metabase `
-  -p 3000:3000 `
-  metabase/metabase:latest
-
-# Wait 60-90 seconds (Java is slow to start), then open:
-# http://localhost:3000
-
-# Setup wizard:
-#   1. Language: English
-#   2. Create admin account: use any email + password (it's local only)
-#   3. "Add your data":
-#       Database type: PostgreSQL
-#       Display name:  Hospital Analytics
-#       Host:          host.docker.internal    ← NOT localhost!
-#       Port:          5432
-#       Database name: hospital_analytics
-#       Username:      postgres
-#       Password:      postgres
-#   4. Click "Connect" → success
-#   5. Finish setup
-
-# Test it: New → SQL Query → paste this:
-# SELECT department, total_revenue FROM v_department_performance ORDER BY total_revenue DESC;
-# Click Run → you should see your departments with revenue numbers.
-
-# ── TROUBLESHOOTING: Metabase can't connect to PostgreSQL ─────────────────────
-# Error: "Connection refused" in Metabase setup
-# Cause: "localhost" inside a Docker container means the container itself, not your PC.
-# Fix: Use "host.docker.internal" as the host — this is a special Docker DNS name
-#      that points from inside a container back to your Windows/Mac host machine.
-# On Linux: use your machine's local IP instead (usually 172.17.0.1)
-#   Find it with: docker inspect hospital-postgres | grep IPAddress
-
-# ── TROUBLESHOOTING: Metabase stuck on loading screen ─────────────────────────
-# It just needs more time. Wait 2 minutes, then refresh the browser.
-# Check if it's ready: docker logs hospital-metabase 2>&1 | tail -5
-# When you see "Metabase Initialization COMPLETE", it's ready.
-
----
-
-# ════════════════════════════════════════════════
-# PART H — Connect DBeaver (optional but useful)
+# PART G — Connect DBeaver (optional but useful)
 # ════════════════════════════════════════════════
 
 # DBeaver lets you browse tables and run SQL queries visually.
@@ -310,7 +269,7 @@ docker run -d `
 ---
 
 # ════════════════════════════════════════════════
-# PART I — Google Sheets Setup (when ready)
+# PART H — Google Sheets Setup (when ready)
 # ════════════════════════════════════════════════
 
 # Step 1: Go to https://console.cloud.google.com
@@ -342,17 +301,16 @@ docker run -d `
 # DAILY USAGE — after everything is set up
 # ════════════════════════════════════════════════
 
-# Every time you restart your PC, Docker containers stop.
-# To start them again:
+# Every time you restart your PC, the Docker container stops.
+# To start it again:
 docker start hospital-postgres
-docker start hospital-metabase
 
 # Then run the pipeline:
 cd C:\path\to\hospital_analytics
 python automation/scheduler.py --once
 
 # To stop when done:
-docker stop hospital-postgres hospital-metabase
+docker stop hospital-postgres
 
 ---
 

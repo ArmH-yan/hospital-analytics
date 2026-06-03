@@ -10,7 +10,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;   -- fuzzy text search on names
 CREATE TABLE IF NOT EXISTS patients (
     patient_id        VARCHAR(12)  PRIMARY KEY,
     age               SMALLINT     CHECK (age BETWEEN 1 AND 120),
-    gender            VARCHAR(10)  NOT NULL CHECK (gender IN ('Male','Female','Other')),
+    gender            VARCHAR(10)  NOT NULL CHECK (gender IN ('Male','Female')),
     city              VARCHAR(60),
     registration_date DATE         NOT NULL DEFAULT CURRENT_DATE,
     created_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW()
@@ -22,6 +22,7 @@ COMMENT ON TABLE patients IS 'Core patient master table. One row per unique pati
 CREATE TABLE IF NOT EXISTS doctors (
     doctor_id   VARCHAR(8)   PRIMARY KEY,
     doctor_name VARCHAR(100) NOT NULL,
+    gender      VARCHAR(10)  NOT NULL CHECK (gender IN ('Male','Female')),
     specialty   VARCHAR(60)  NOT NULL,
     department  VARCHAR(80)  NOT NULL,
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()

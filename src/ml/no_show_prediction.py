@@ -95,9 +95,9 @@ def evaluate_model(model, X_test, y_test, model_name: str) -> dict:
         "fn": int(cm[1][0]), "tp": int(cm[1][1]),
     }
 
-    print(f"\n{'─'*50}")
+    print(f"\n{'-'*50}")
     print(f"  {model_name}")
-    print(f"{'─'*50}")
+    print(f"{'-'*50}")
     print(f"  Accuracy : {metrics['accuracy']:.4f}")
     print(f"  Precision: {metrics['precision']:.4f}")
     print(f"  Recall   : {metrics['recall']:.4f}")
@@ -186,22 +186,22 @@ def run_ml_pipeline():
     # ── Business interpretation ───────────────────────────────────────────────
     best = metrics_df.sort_values("roc_auc", ascending=False).iloc[0]
     print(f"""
-+==========================================================╗
++==========================================================+
 |  BUSINESS INTERPRETATION                                 |
-+==========================================================|
++==========================================================+
 |  Best model : {best['model']:<43} |
 |  ROC-AUC    : {best['roc_auc']:<43} |
 |  Recall     : {best['recall']:<43} |
-+==========================================================|
++==========================================================+
 |  • A recall of {best['recall']:.0%} means the model correctly flags  |
 |    ~{best['recall']:.0%} of patients who would no-show.              |
 |  • These patients can receive automated SMS reminders,   |
 |    phone calls, or be double-booked to reduce lost       |
 |    appointment slots.                                    |
-|  • Based on the no-show volume in this dataset, this     |
-|    model could recover an estimated 30–40% of revenue    |
-|    lost to no-shows if recall > 0.65.                    |
-+==========================================================╝
+|  • If recall > 0.65, this model is worth deploying in    |
+|    production: estimated 30-40% recovery of revenue      |
+|    lost to no-shows.                                     |
++==========================================================+
 """)
 
     return metrics_df
@@ -218,7 +218,11 @@ def get_engine_safe():
 
 
 def generate_synthetic_features(n=20000):
-    """Fallback: generate features without a DB connection for demo/testing."""
+    """Fallback: generate features without a DB connection for demo/testing.
+
+    Note: feature set mirrors the DB view `v_no_show_risk_features` so the
+    model is trained on the same columns in both paths.
+    """
     np.random.seed(42)
     df = pd.DataFrame({
         "age":                      np.random.randint(18, 80, n),
@@ -230,13 +234,13 @@ def generate_synthetic_features(n=20000):
         "prior_no_shows":           np.random.poisson(0.5, n).clip(0, 10),
         "prior_total_appointments": np.random.poisson(3, n).clip(0, 20),
     })
-    # Simulate realistic no-show probability
+    prior_rate = df["prior_no_shows"] / (df["prior_total_appointments"] + 1)
     p = (
-        0.10 +
-        0.15 * (df["prior_no_shows"] / (df["prior_total_appointments"] + 1)) +
-        0.05 * (df["appointment_weekday"].isin([1, 5])).astype(float) +
-        0.02 * (df["age"] < 30).astype(float)
-    ).clip(0.05, 0.55)
+        0.05
+        + 0.55 * prior_rate
+        + 0.10 * (df["appointment_weekday"].isin([0, 4])).astype(float)  # Mon/Fri
+        + 0.06 * (df["age"] < 30).astype(float)
+    ).clip(0.05, 0.80)
     df["no_show"] = np.random.binomial(1, p)
     logger.info(f"  Generated {n:,} synthetic feature rows (no DB). No-show rate: {df['no_show'].mean():.2%}")
     return df
