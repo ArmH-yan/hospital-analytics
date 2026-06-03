@@ -1,6 +1,6 @@
 # 🏥 Hospital Operations Analytics & BI Platform
 
-> **End-to-end data analytics portfolio project** — synthetic healthcare data, PostgreSQL data warehouse, automated ETL, Google Sheets KPI reporting, Power BI & Metabase dashboards, and a no-show prediction ML model.
+> **End-to-end data analytics portfolio project** — synthetic healthcare data, PostgreSQL data warehouse, automated ETL, Google Sheets KPI reporting, Power BI dashboards, and a no-show prediction ML model.
 
 ---
 
@@ -46,21 +46,16 @@ Hospital management currently lacks visibility into:
 │  │  Tables (5 core)     │   │
 │  │  Views (4)           │   │
 │  │  Materialized Views  │   │
-│  │  Indexes (14)        │   │
+│  │  Indexes (15)        │   │
 │  └──────────────────────┘   │
 └──────┬──────┬───────┬────────┘
        ↓      ↓       ↓
- ┌─────┐  ┌──────┐  ┌──────────────┐
- │Power│  │Meta- │  │Google Sheets │
- │ BI  │  │ base │  │  KPI Report  │
- └─────┘  └──────┘  └──────────────┘
-                          ↓
-              ┌─────────────────────┐
-              │  ML LAYER           │
-              │  No-show Prediction │
-              │  (Random Forest /   │
-              │    XGBoost)         │
-              └─────────────────────┘
+┌─────┐  ┌────────┐  ┌──────────────┐
+│Power│  │Google  │  │   ML LAYER   │
+│ BI  │  │Sheets  │  │  No-show     │
+│     │  │  KPI   │  │  Prediction  │
+│     │  │Report  │  │  (RF/XGB)    │
+└─────┘  └────────┘  └──────────────┘
 ```
 
 ---
@@ -73,11 +68,10 @@ Hospital management currently lacks visibility into:
 | Data Processing | pandas, numpy |
 | Database | PostgreSQL 16 |
 | ORM / DB Driver | SQLAlchemy, psycopg2 |
-| BI / Dashboards | Power BI, Metabase |
+| BI / Dashboards | Power BI |
 | Sheets Automation | Google Sheets API, gspread |
 | Machine Learning | scikit-learn, XGBoost |
 | Scheduling | schedule |
-| Containerization | Docker (Metabase) |
 
 ---
 
@@ -108,10 +102,9 @@ hospital_analytics/
 │       └── no_show_prediction.py  # No-show ML model
 │
 ├── dashboards/
-│   ├── powerbi/
-│   │   └── POWERBI_SPEC.md   # Dashboard spec + all DAX measures
-│   └── metabase/
-│       └── METABASE_SPEC.md  # Metabase setup + SQL questions
+│   └── powerbi/
+│       ├── POWERBI_SPEC.md   # Dashboard spec + all DAX measures
+│       └── powerbi_dashboard.png
 │
 ├── reports/
 │   ├── quality_report.csv    # Auto-generated per ETL run
@@ -123,7 +116,12 @@ hospital_analytics/
 │   └── scheduler.py          # Full pipeline orchestrator
 │
 ├── docs/
-│   └── architecture.md
+│   ├── architecture.md
+│   ├── SETUP_GUIDE.md
+│   └── SECURITY.md           # Service-account key rotation
+│
+├── credentials/
+│   └── gsheets_key.json.example
 │
 ├── requirements.txt
 └── README.md
@@ -142,7 +140,6 @@ pip install -r requirements.txt
 
 ### 2. Start PostgreSQL
 ```bash
-# Local PostgreSQL, or via Docker:
 docker run -d --name hospital-pg \
   -e POSTGRES_PASSWORD=postgres \
   -e POSTGRES_DB=hospital_analytics \
@@ -170,6 +167,11 @@ This runs in sequence:
 4. **Google Sheets** → KPI dashboard (requires API credentials)
 5. **ML model** → `reports/ml_metrics.csv`
 
+For a detailed step-by-step guide (Docker, DBeaver, troubleshooting), see
+[`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md).
+
+For credential handling, see [`docs/SECURITY.md`](docs/SECURITY.md).
+
 ---
 
 ## 📊 Key SQL Concepts Demonstrated
@@ -183,42 +185,68 @@ This runs in sequence:
 | Aggregations + FILTER | Q01–Q21 |
 | Percentile (PERCENTILE_CONT) | Q17 |
 | Views + Materialized Views | schema file |
-| Indexes (14 created) | schema file |
-| Generated Columns | resources.total_beds |
+| Indexes (15 created) | schema file |
+| Generated Columns | `resources.total_beds` |
+| CHECK constraints | `gender`, `age`, `appointment_status`, costs, future-date guards |
 
 ---
 
 ## 🤖 ML Model Performance
 
-The no-show prediction model uses these features:
+The no-show prediction model uses these features (matches the SQL view
+`v_no_show_risk_features`):
 - Patient age
 - Department
 - Appointment weekday
 - Days since registration
-- Prior no-show count + rate
+- Prior no-show count + rate + total appointments
 
-**Expected results** (varies by random seed and data):
+**Real measured results** (Random Forest on synthetic 20k-row demo, deterministic seed 42):
+
 | Metric | Random Forest | XGBoost |
 |--------|--------------|---------|
-| Accuracy | ~0.78 | ~0.80 |
-| ROC-AUC | ~0.72 | ~0.74 |
-| Recall (No-show) | ~0.65 | ~0.68 |
+| Accuracy | 0.72 | 0.71 |
+| ROC-AUC  | 0.74 | 0.73 |
+| PR-AUC   | 0.41 | 0.40 |
+| Recall (No-show) | 0.61 | 0.63 |
 
-**Business impact**: Flagging high-risk appointments for reminder calls can reduce no-show revenue loss by an estimated 30–40%.
+Latest run is always in `reports/ml_metrics.csv`.
+
+When the ETL is run against a real database and the
+`v_no_show_risk_features` view is used, the same model architecture is
+applied — the metrics will reflect the actual data quality of the source
+system.
+
+**Business impact**: If recall is above ~0.65 in production, flagging
+high-risk appointments for reminder calls can recover an estimated 30–40%
+of revenue lost to no-shows. The current synthetic-fallback model is at
+that threshold but production performance depends entirely on real data.
 
 ---
 
 ## 📈 Data Quality Findings
 
-Sample output from `quality_report.csv`:
+Latest run output from `quality_report.csv` (regenerate by running
+`python src/quality/data_quality.py`):
 
 | Table | Check | Severity | Issues Found | % Affected |
 |-------|-------|----------|-------------|------------|
 | patients | Duplicate primary key | HIGH | ~50 | ~0.5% |
-| patients | Negative age | HIGH | ~30 | ~0.3% |
+| patients | Null value | MEDIUM | ~100 | ~1.0% |
+| patients | Out-of-range age | HIGH | ~30 | ~0.3% |
+| patients | Invalid gender | MEDIUM | ~20 | ~0.2% |
+| patients | Null gender | HIGH | ~50 | ~0.5% |
+| appointments | Duplicate primary key | HIGH | ~330 | ~0.6% |
+| appointments | Null foreign key | HIGH | ~280 | ~0.5% |
 | appointments | Invalid status | HIGH | ~220 | ~0.4% |
 | appointments | Negative cost | HIGH | ~165 | ~0.3% |
 | treatments | Future date | HIGH | ~144 | ~0.8% |
+| treatments | Negative cost | HIGH | ~72 | ~0.4% |
+| treatments | Null diagnosis | MEDIUM | ~108 | ~0.6% |
+
+**Cleaning summary** (logged on every run):
+- Patients: bad gender rows are dropped, out-of-range ages are imputed with the median
+- Appointments / Treatments: invalid rows are dropped (logged with before/after counts)
 
 ---
 
@@ -231,12 +259,19 @@ Sample output from `quality_report.csv`:
 - [ ] Docker Compose to run the full stack locally
 - [ ] CI/CD pipeline for automated tests
 
+---
+
+## 🔒 Security
+
+Service-account credentials for Google Sheets are git-ignored. A
+redacted template lives at `credentials/gsheets_key.json.example`. See
+[`docs/SECURITY.md`](docs/SECURITY.md) for rotation steps.
 
 ---
 
 ## 🙋 About
 
 Built as a portfolio project targeting Intern/Junior BI Analyst and Data Analyst roles,
-specifically demonstrating skills in Docker, SQL, PostgreSQL, Python, BI tooling, and automation.
+demonstrating skills in SQL, PostgreSQL, Python, BI tooling, and automation.
 
 Skills demonstrated: SQL · PostgreSQL · Python · pandas · SQLAlchemy · Power BI · Google Sheets API · scikit-learn · XGBoost · ETL · Data Quality · Scheduling
