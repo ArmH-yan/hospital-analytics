@@ -37,10 +37,10 @@ DEPARTMENTS = [
 
 CITIES = [
     "Yerevan", "Gyumri", "Vanadzor", "Vagharshapat", "Abovyan",
-    "Kapan", "Hrazdan", "Abovyan", "Charentsavan", "Goris"
+    "Kapan", "Hrazdan", "Charentsavan", "Goris", "Ashtarak"
 ]
 
-GENDERS = ["Male", "Female", "Other"]
+GENDERS = ["Male", "Female"]
 
 STATUSES = ["Completed", "No-show", "Cancelled", "Rescheduled"]
 
@@ -61,7 +61,7 @@ def generate_patients(n: int) -> pd.DataFrame:
     logger.info(f"Generating {n} patients...")
     ids = [f"PAT{str(i).zfill(6)}" for i in range(1, n + 1)]
     ages = np.random.normal(loc=45, scale=18, size=n).astype(int).clip(1, 100)
-    genders = np.random.choice(GENDERS, size=n, p=[0.48, 0.50, 0.02])
+    genders = np.random.choice(GENDERS, size=n, p=[0.48, 0.52])
     cities = np.random.choice(CITIES, size=n)
     reg_dates = [
         datetime(2020, 1, 1) + timedelta(days=random.randint(0, 1460))
@@ -83,7 +83,7 @@ def generate_patients(n: int) -> pd.DataFrame:
     df.loc[df.sample(frac=0.003).index, "age"] = -random.randint(1, 5)
     # Null gender (~0.5%)
     df.loc[df.sample(frac=0.005).index, "gender"] = np.nan
-    # Invalid gender (~0.2%)
+    # Invalid gender (~0.2%) — leftover from old 'Other' era
     df.loc[df.sample(frac=0.002).index, "gender"] = "Unknown_XYZ"
     # Duplicate rows (~0.5%)
     dupes = df.sample(frac=0.005)
@@ -93,27 +93,44 @@ def generate_patients(n: int) -> pd.DataFrame:
     return df
 
 
+MALE_FIRST_NAMES = [
+    "Armen", "Davit", "Hovhannes", "Vahe", "Tigran",
+    "Aram", "Hayk", "Narek", "Mkrtich", "Artur"
+]
+
+FEMALE_FIRST_NAMES = [
+    "Ani", "Nare", "Lilit", "Mariam", "Sona",
+    "Tatevik", "Lusine", "Astghik", "Diana", "Nune"
+]
+
+LAST_NAMES = [
+    "Sargsyan", "Petrosyan", "Hovhannisyan", "Grigoryan",
+    "Harutyunyan", "Mkrtchyan", "Karapetyan", "Ghazaryan",
+    "Avagyan", "Danielyan"
+]
+
+
 def generate_doctors(n: int) -> pd.DataFrame:
     logger.info(f"Generating {n} doctors...")
-    first_names = ["Armen", "Ani", "Davit", "Nare", "Hovhannes", "Lilit",
-                   "Vahe", "Mariam", "Tigran", "Sona", "Aram", "Tatevik",
-                   "Hayk", "Lusine", "Narek", "Astghik", "Mkrtich", "Diana",
-                   "Artur", "Nune"]
-    last_names  = ["Sargsyan", "Petrosyan", "Hovhannisyan", "Grigoryan",
-                   "Harutyunyan", "Mkrtchyan", "Karapetyan", "Ghazaryan",
-                   "Avagyan", "Danielyan"]
     ids = [f"DOC{str(i).zfill(4)}" for i in range(1, n + 1)]
-    names = [f"Dr. {random.choice(first_names)} {random.choice(last_names)}" for _ in range(n)]
+    genders = np.random.choice(GENDERS, size=n, p=[0.50, 0.50])
+    firsts = [
+        random.choice(MALE_FIRST_NAMES if g == "Male" else FEMALE_FIRST_NAMES)
+        for g in genders
+    ]
+    lasts  = [random.choice(LAST_NAMES) for _ in range(n)]
+    names  = [f"Dr. {f} {l}" for f, l in zip(firsts, lasts)]
     specialties = np.random.choice(SPECIALTIES, size=n)
     departments = [DEPARTMENTS[SPECIALTIES.index(s)] for s in specialties]
 
     df = pd.DataFrame({
-        "doctor_id": ids,
-        "doctor_name": names,
-        "specialty": specialties,
-        "department": departments
+        "doctor_id":    ids,
+        "doctor_name":  names,
+        "gender":       genders,
+        "specialty":    specialties,
+        "department":   departments
     })
-    logger.info(f"  → {len(df)} rows")
+    logger.info(f"  → {len(df)} rows ({int((genders=='Male').sum())} male, {int((genders=='Female').sum())} female)")
     return df
 
 
