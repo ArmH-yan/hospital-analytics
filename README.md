@@ -140,10 +140,12 @@ pip install -r requirements.txt
 
 ### 2. Start PostgreSQL
 ```bash
-docker run -d --name hospital-pg \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=hospital_analytics \
-  -p 5432:5432 postgres:16
+  docker run -d ` \
+  --name hospital-postgres ` \
+  -e POSTGRES_PASSWORD=postgres ` \
+  -e POSTGRES_DB=hospital_analytics ` \
+  -p 5432:5432 ` \
+  postgres:16
 ```
 
 ### 3. Set environment variables

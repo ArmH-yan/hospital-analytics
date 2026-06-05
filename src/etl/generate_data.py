@@ -13,8 +13,8 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-np.random.seed(42)
-random.seed(42)
+np.random.seed(142)
+random.seed(142)
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 N_PATIENTS     = 10_000
