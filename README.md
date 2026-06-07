@@ -82,6 +82,19 @@ Design spec, full DAX measure library, and theme:
 
 ---
 
+## 📋 Google Sheets KPI Report
+
+A companion KPI dashboard is updated automatically by the ETL pipeline via
+the Google Sheets API (`src/sheets/sheets_kpi_update.py`).
+
+[**Open Google Sheets KPI Report →**](https://docs.google.com/spreadsheets/d/1oubgOekr7THUXH4Ds0CCx4q8W1avIFTitjyZYvzK_A8/edit?usp=sharing)
+
+> The sheet is viewable by anyone with the link. It reflects the data from
+> the most recent ETL run. To update it, run `python src/sheets/sheets_kpi_update.py`
+> with valid service-account credentials (see [`docs/SECURITY.md`](docs/SECURITY.md)).
+
+---
+
 ## 🛠️ Tech Stack
 
 | Layer | Tool |
