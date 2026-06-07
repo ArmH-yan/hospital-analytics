@@ -60,6 +60,28 @@ Hospital management currently lacks visibility into:
 
 ---
 
+## 📊 Power BI Dashboard
+
+The Power BI report (`dashboards/hospital_analytics.pbix`, version 1.28,
+Storm theme) is organized into **3 pages with 11 visuals**, reading from
+PostgreSQL views and materialized views plus a few native SQL queries.
+
+- **Page 1 — Executive Overview**: Revenue / Appts / Patients KPI cards,
+  Revenue Over Time area chart by department, Revenue by Department bar,
+  No-show Rate by Department column.
+- **Page 2 — Patient & Doctor Analysis**: Patient Age Distribution column,
+  Appointment Status Breakdown donut, Doctor Performance Table.
+- **Page 3 — Resource Utilization**: Equipment Utilization gauge, Bed
+  Occupancy by Department 100% stacked bar.
+
+Full chart-by-chart inventory (visual, type, fields, source):
+[`dashboards/powerbi/DASHBOARD_REPORT.md`](dashboards/powerbi/DASHBOARD_REPORT.md).
+
+Design spec, full DAX measure library, and theme:
+[`dashboards/powerbi/POWERBI_SPEC.md`](dashboards/powerbi/POWERBI_SPEC.md).
+
+---
+
 ## 🛠️ Tech Stack
 
 | Layer | Tool |
@@ -102,9 +124,10 @@ hospital_analytics/
 │       └── no_show_prediction.py  # No-show ML model
 │
 ├── dashboards/
+│   ├── hospital_analytics.pbix   # Power BI report file
 │   └── powerbi/
-│       ├── POWERBI_SPEC.md   # Dashboard spec + all DAX measures
-│       └── powerbi_dashboard.png
+│       ├── POWERBI_SPEC.md       # Dashboard design spec + all DAX measures
+│       └── DASHBOARD_REPORT.md   # Chart-by-chart inventory of the .pbix
 │
 ├── reports/
 │   ├── quality_report.csv    # Auto-generated per ETL run
@@ -140,10 +163,12 @@ pip install -r requirements.txt
 
 ### 2. Start PostgreSQL
 ```bash
-docker run -d --name hospital-pg \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=hospital_analytics \
-  -p 5432:5432 postgres:16
+  docker run -d ` \
+  --name hospital-postgres ` \
+  -e POSTGRES_PASSWORD=postgres ` \
+  -e POSTGRES_DB=hospital_analytics ` \
+  -p 5432:5432 ` \
+  postgres:16
 ```
 
 ### 3. Set environment variables

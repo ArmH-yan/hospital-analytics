@@ -40,5 +40,3 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Power BI (binary — keep spec docs but not .pbix unless small)
-*.pbix
