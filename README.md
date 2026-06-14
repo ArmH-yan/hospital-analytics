@@ -4,7 +4,7 @@
 
 ---
 
-## 📌 Business Problem
+## Business Problem
 
 Hospital management currently lacks visibility into:
 - Patient volume trends and growth
@@ -17,7 +17,7 @@ Hospital management currently lacks visibility into:
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌────────────────────────────────────────────────────────────┐
@@ -60,7 +60,7 @@ Hospital management currently lacks visibility into:
 
 ---
 
-## 📊 Power BI Dashboard
+## Power BI Dashboard
 
 The Power BI report (`dashboards/hospital_analytics.pbix`, version 1.28,
 Storm theme) is organized into **3 pages with 11 visuals**, reading from
@@ -82,7 +82,7 @@ Design spec, full DAX measure library, and theme:
 
 ---
 
-## 📋 Google Sheets KPI Report
+## Google Sheets KPI Report
 
 A companion KPI dashboard is updated automatically by the ETL pipeline via
 the Google Sheets API (`src/sheets/sheets_kpi_update.py`).
@@ -95,7 +95,7 @@ the Google Sheets API (`src/sheets/sheets_kpi_update.py`).
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Tool |
 |-------|------|
@@ -110,7 +110,7 @@ the Google Sheets API (`src/sheets/sheets_kpi_update.py`).
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 hospital_analytics/
@@ -165,7 +165,7 @@ hospital_analytics/
 
 ---
 
-## ⚙️ Setup & Quick Start
+## Setup & Quick Start
 
 ### 1. Clone and install
 ```bash
@@ -212,24 +212,7 @@ For credential handling, see [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ---
 
-## 📊 Key SQL Concepts Demonstrated
-
-| Concept | Location |
-|---------|----------|
-| CTEs | Q02, Q06, Q10, Q15, Q20 |
-| Window Functions (LAG, RANK, NTILE, SUM OVER) | Q02, Q03, Q04, Q05, Q07, Q12, Q14 |
-| Rolling Averages | Q05, Q07, Q14 |
-| Cohort Analysis | Q06 |
-| Aggregations + FILTER | Q01–Q21 |
-| Percentile (PERCENTILE_CONT) | Q17 |
-| Views + Materialized Views | schema file |
-| Indexes (15 created) | schema file |
-| Generated Columns | `resources.total_beds` |
-| CHECK constraints | `gender`, `age`, `appointment_status`, costs, future-date guards |
-
----
-
-## 🤖 ML Model Performance
+## ML Model Performance
 
 The no-show prediction model uses these features (matches the SQL view
 `v_no_show_risk_features`):
@@ -262,7 +245,7 @@ that threshold but production performance depends entirely on real data.
 
 ---
 
-## 📈 Data Quality Findings
+## Data Quality Findings
 
 Latest run output from `quality_report.csv` (regenerate by running
 `python src/quality/data_quality.py`):
@@ -288,7 +271,7 @@ Latest run output from `quality_report.csv` (regenerate by running
 
 ---
 
-## 🔮 Future Improvements
+## Future Improvements
 
 - [ ] Add dbt for SQL transformations layer
 - [ ] Airflow/Prefect for proper DAG orchestration
@@ -299,7 +282,7 @@ Latest run output from `quality_report.csv` (regenerate by running
 
 ---
 
-## 🔒 Security
+## Security
 
 Service-account credentials for Google Sheets are git-ignored. A
 redacted template lives at `credentials/gsheets_key.json.example`. See
@@ -307,7 +290,7 @@ redacted template lives at `credentials/gsheets_key.json.example`. See
 
 ---
 
-## 🙋 About
+## About
 
 Built as a portfolio project targeting Intern/Junior BI Analyst and Data Analyst roles,
 demonstrating skills in SQL, PostgreSQL, Python, BI tooling, and automation.
